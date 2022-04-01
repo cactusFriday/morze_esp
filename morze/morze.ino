@@ -1,22 +1,9 @@
-// ESP8266 Morse Code Webserver Example
-//
-// Display a web page with a form and blink out the submitted
-// message in morse code on an LED!
-//
-// Note you need to have a LED connected to pin 13 to see the
-// morse code messages.
-//
-// Author: Tony DiCola
-//
-// License: MIT License
-//
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 
 #include "index.h"
 
-
-// Details of AP to connect to on boot. 
+// Connection credentials
 const char* ssid = "?";
 const char* password = "05182374";
 
@@ -37,9 +24,6 @@ const int morse_letter_delay_ms = morse_dot_ms*3;
 // Delay between words is seven dots.
 const int morse_word_delay_ms = morse_dot_ms*7;
 
-// Signal to turn the LED on and off.  By default the code
-// expects a HIGH signal is LED on and LOW signal is LED off,
-// but you can reverse things if your circuit is different.
 const int led_on  = HIGH;
 const int led_off = LOW;
 
@@ -112,10 +96,7 @@ void setup(void)
   Serial.println(WiFi.localIP());
   
   // Configure web server root handler to return the main 
-  // HTML page.  Note the funny []() { .. code .. } syntax
-  // is a C++11 lambda function, you can learn more about
-  // the syntax here:
-  //   http://www.drdobbs.com/cpp/lambdas-in-c11/240168241   
+  // HTML page. 
   server.on("/", []() {
     // Serve up the main HTML page.
     server.send(200, "text/html", index_html);
@@ -151,7 +132,7 @@ void loop(void)
 {
   // Take care of handling any web server requests.
   server.handleClient();
-} 
+}
 
 void blink_morse_char(int led_pin, char c) {
   // Blink out the morse code for the specified character.
@@ -168,7 +149,7 @@ void blink_morse_char(int led_pin, char c) {
     code = morse_codes[c-'0'+26];
   }
   else {
-    // Unknown character, ignore it!
+    // Unknown character
     return;
   }
   
@@ -219,9 +200,7 @@ void blink_morse(int led_pin, const char* message) {
 
 void form_url_decode(const char* encoded, char* decoded) {
   // Decode a string in 'application/x-www-form-urlencoded' format
-  // to its normal ASCII representation.  See details on this
-  // format in the HTML spec at:
-  //   http://www.w3.org/MarkUp/html-spec/html-spec_8.html#SEC8.2.1
+  // to its normal ASCII representation.  
   // Note the output string MUST be large enough to hold the string!
   // As long as the output is at least as large as the input then
   // you will never have a problem (i.e. decoded strings are smaller).
