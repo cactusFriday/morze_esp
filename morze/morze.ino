@@ -8,7 +8,7 @@ const char* ssid = "?";
 const char* password = "05182374";
 
 // Pin connected to the LED.
-const int led = 13;
+const int led = LED_BUILTIN;
 
 // Global web server instance.
 ESP8266WebServer server(80);
