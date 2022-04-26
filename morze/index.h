@@ -3,6 +3,7 @@ const char* index_html = R"(
   <!DOCTYPE html>
   <html>
     <head>
+      <meta charset='utf-8'>
       <title>Morse Code Blinker</title>
       <style>
         body {

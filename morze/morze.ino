@@ -5,7 +5,7 @@
 
 // Connection credentials
 const char* ssid = "?";
-const char* password = "05182374";
+const char* password = "";
 
 // Pin connected to the LED.
 const int led = LED_BUILTIN;
@@ -32,6 +32,38 @@ const int max_message_len = 500;
 
 // Table of character to morse code mapping.
 // Each string represents the dashes and dots for a character.
+const char* morse_codes_rus[31] = {
+  ".-",     // А
+  "-...",   // Б
+  "--.",    // Г
+  "-..",    // д
+  ".",      // E
+  "...-",   // Ж
+  "--..",   // З
+  "..",     // И
+  ".---",   // Й
+  "-.-",    // К
+  ".-..",   // Л
+  "--",     // М
+  "-.",     // Н
+  "---",    // О
+  ".--.",   // П
+  ".-.",    // Р
+  "...",    // С
+  "-",      // Т
+  "..-",    // У
+  "..-.",   // Ф
+  "....",   // Х
+  "-.-.",   // Ц
+  "---.",   // Ч
+  "----",   // Ш
+  "--.-",   // Щ
+  "-..-",   // Ъ
+  "..-..",  // Э
+  "..--",   // Ю
+  ".-.-",   // Ю
+};
+
 const char* morse_codes[36] = {
   ".-",     // A
   "-...",   // B
@@ -140,19 +172,41 @@ void blink_morse_char(int led_pin, char c) {
 
   // First look up the string of morse code for the character.
   const char* code = NULL;
+  int idx = 0;
   if ((c >= 'A') && (c <= 'Z')) {
     // Get the code for an alphabet character.
-    code = morse_codes[c-'A'];
+    idx = c - 'A';
   }
   else if ((c >= '0') && (c <= '9')) {
     // Get the code for a number.
-    code = morse_codes[c-'0'+26];
+    idx = c - '0' + 26;
   }
+  // В случае русской буквы, она записывается в 2 элемента массива и 
+  // всегда начинается с 208. 
+  // else if (int(c) == 208) {
+  //   code = morse_codes[int(c) - 191];
+  // }
   else {
     // Unknown character
     return;
   }
-  
+  code = morse_codes[idx];
+  blink_code(led_pin, code);
+}
+
+void blink_morse_char_rus(int led_pin, char first, char second) {
+  // Случай с большими символами Кириллицы.
+  // Первый байт не трогаем ( он всегда 208 )
+  // Второй байт от 144 до 175
+  // В таблице ASCII же А-Я = 192-223
+  // Значит нужно брать второй бит и вычитать 144, чтобы получить мап 0-31
+  int idx = second - 144;
+  const char* code = NULL;
+  code = morse_codes_rus[idx];
+  blink_code(led_pin, code);
+}
+
+void blink_code(int led_pin, const char* code) {
   // Now loop through the components of the code and display them.
   // Be careful to not delay after the last character.
   for (int i = 0; i < strlen(code)-1; ++i) {
@@ -176,9 +230,16 @@ void blink_morse(int led_pin, const char* message) {
   // Process each character in the message and send them out 
   // as morse code. Keep track of the previously seen character
   // to find word boundaries.
+  int start_i = 1;
   char old = toupper(message[0]);
-  blink_morse_char(led_pin, old);
-  for (int i = 1; i < strlen(message); ++i) {
+  if (is_russian(old)) {
+    blink_morse_char_rus(led_pin, message[0], message[1]);
+    start_i = 2;
+  }
+  else {
+    blink_morse_char(led_pin, old);
+  }
+  for (int i = start_i; i < strlen(message); ++i) {
     char c = toupper(message[i]);
     // Delay for word boundary if last char is whitespace and 
     // new char is alphanumeric.
@@ -190,11 +251,17 @@ void blink_morse(int led_pin, const char* message) {
     else if (isalnum(old) && isalnum(c)) {
       delay(morse_letter_delay_ms);
     }
-    // Else do nothing for other character boundaries.
     
-    // Blink out the current character and move on to the next.
-    blink_morse_char(led_pin, c);
-    old = c;
+    // Если символ кириллицы - забираем 2 элемента, инкрементируем счетчик
+    if (is_russian(c)) {
+      blink_morse_char_rus(led_pin, c, message[i + 1]);
+      old = message[i + 1];
+      i++;
+    }
+    else {
+      blink_morse_char(led_pin, c);
+      old = c;
+    }
   }
 }
 
@@ -239,4 +306,12 @@ void form_url_decode(const char* encoded, char* decoded) {
       decoded[j] = c;
     }
   } 
+}
+
+bool is_russian(char c) {
+  //Проверка на русские символы
+  if (int(c) == 208) {
+    return true;
+  }
+  return false;
 }
